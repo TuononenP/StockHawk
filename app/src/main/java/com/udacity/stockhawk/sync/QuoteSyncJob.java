@@ -79,7 +79,7 @@ public final class QuoteSyncJob {
 
                 Stock stock = quotes.get(symbol);
                 // check if ticker does not exists
-                if (stock.getName() == null) {
+                if (stock.isValid()) {
                     Timber.e(context.getString(R.string.toast_ticker_does_not_exist));
                     // TODO: Inform user somehow
                 }
