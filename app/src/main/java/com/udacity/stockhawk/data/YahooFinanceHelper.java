@@ -3,6 +3,7 @@ package com.udacity.stockhawk.data;
 import android.content.ContentValues;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.support.annotation.Nullable;
 
 import com.udacity.stockhawk.R;
 
@@ -33,6 +34,7 @@ public class YahooFinanceHelper {
         mContext = context;
     }
 
+    @Nullable
     public static Stock GetSingleQuote(String symbol) {
         Stock stock = null;
         try {
@@ -50,6 +52,7 @@ public class YahooFinanceHelper {
         }
     }
 
+    @Nullable
     public static Map<String, Stock> GetMultipleQuotes(String[] symbols) {
         if (symbols.length == 0) {
             return null;
