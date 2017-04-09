@@ -8,31 +8,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Handler;
-import android.os.Looper;
-import android.widget.Toast;
 
 import com.udacity.stockhawk.R;
 import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.data.PrefUtils;
+import com.udacity.stockhawk.data.YahooFinanceHelper;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import timber.log.Timber;
 import yahoofinance.Stock;
-import yahoofinance.YahooFinance;
-import yahoofinance.histquotes.HistoricalQuote;
-import yahoofinance.histquotes.Interval;
-import yahoofinance.quotes.stock.StockQuote;
-
-import static android.R.id.message;
 
 public final class QuoteSyncJob {
 
@@ -43,119 +31,75 @@ public final class QuoteSyncJob {
     private static final int PERIODIC_ID = 1;
     private static final int YEARS_OF_HISTORY = 2;
 
-    private QuoteSyncJob() {
+    private static YahooFinanceHelper _yahooFinanceHelper;
+
+    private QuoteSyncJob(Context context) {
+        _yahooFinanceHelper = new YahooFinanceHelper(context);
     }
 
-    static void getQuotes(final Context context) {
-
-        Timber.d("Running sync job");
-
-        Calendar from = Calendar.getInstance();
-        Calendar to = Calendar.getInstance();
-        from.add(Calendar.YEAR, -YEARS_OF_HISTORY);
-
-        try {
-
-            Set<String> stockPref = PrefUtils.getStocks(context);
-            Set<String> stockCopy = new HashSet<>();
-            stockCopy.addAll(stockPref);
-            String[] stockArray = stockPref.toArray(new String[stockPref.size()]);
-
-            Timber.d(stockCopy.toString());
-
-            if (stockArray.length == 0) {
-                return;
-            }
-
-            Map<String, Stock> quotes = YahooFinance.get(stockArray);
-            Iterator<String> iterator = stockCopy.iterator();
-
-            Timber.d(quotes.toString());
-
-            ArrayList<ContentValues> quoteCVs = new ArrayList<>();
-
-            while (iterator.hasNext()) {
-                String symbol = iterator.next();
-
-                Stock stock = quotes.get(symbol);
-                // check if ticker does not exists
-                if (stock.isValid()) {
-                    Timber.e(context.getString(R.string.toast_ticker_does_not_exist));
-                    // TODO: Inform user somehow
-                }
-                else {
-                    StockQuote quote = stock.getQuote();
-
-                    float price = quote.getPrice() != null ? quote.getPrice().floatValue() : 0;
-                    float change = quote.getChange() != null ? quote.getChange().floatValue() : 0;
-                    float percentChange = quote.getChangeInPercent() != null ? quote.getChangeInPercent().floatValue() : 0;
-
-                    // WARNING! Don't request historical data for a stock that doesn't exist!
-                    // The request will hang forever X_x
-                    List<HistoricalQuote> history = stock.getHistory(from, to, Interval.WEEKLY);
-
-                    StringBuilder historyBuilder = new StringBuilder();
-
-                    for (HistoricalQuote it : history) {
-                        historyBuilder.append(it.getDate().getTimeInMillis());
-                        historyBuilder.append(", ");
-                        historyBuilder.append(it.getClose());
-                        historyBuilder.append("\n");
-                    }
-
-                    ContentValues quoteCV = new ContentValues();
-                    quoteCV.put(Contract.Quote.COLUMN_SYMBOL, symbol);
-                    quoteCV.put(Contract.Quote.COLUMN_PRICE, price);
-                    quoteCV.put(Contract.Quote.COLUMN_PERCENTAGE_CHANGE, percentChange);
-                    quoteCV.put(Contract.Quote.COLUMN_ABSOLUTE_CHANGE, change);
-
-
-                    quoteCV.put(Contract.Quote.COLUMN_HISTORY, historyBuilder.toString());
-
-                    quoteCVs.add(quoteCV);
-                }
-            }
-
+    static void addQuote(Context context, String symbol) {
+        Stock stock = _yahooFinanceHelper.GetSingleQuote(symbol);
+        if (stock != null) {
+            ContentValues values = _yahooFinanceHelper.GetStockContentValues(stock);
             context.getContentResolver()
-                    .bulkInsert(
-                            Contract.Quote.URI,
-                            quoteCVs.toArray(new ContentValues[quoteCVs.size()]));
-
-            Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED);
-            context.sendBroadcast(dataUpdatedIntent);
-
-        } catch (IOException exception) {
-            Timber.e(exception, "Error fetching stock quotes");
+                    .insert(Contract.Quote.URI, values);
+        }
+        else {
+            Timber.d(context.getString(R.string.log_quote_not_added));
         }
     }
 
-    private static void schedulePeriodic(Context context) {
-        Timber.d("Scheduling a periodic task");
+    static void addQuotes(Context context) {
+        Timber.d(context.getString(R.string.log_running_sync_job));
 
+        Set<String> stockPref = PrefUtils.getStocks(context);
+        Set<String> stockCopy = new HashSet<>();
+        stockCopy.addAll(stockPref);
+        String[] stockArray = stockPref.toArray(new String[stockPref.size()]);
+
+        Timber.d(stockCopy.toString());
+
+        if (stockArray.length == 0) {
+            return;
+        }
+
+        ArrayList<ContentValues> quoteCVs = new ArrayList<>();
+        Map<String, Stock> quotes = _yahooFinanceHelper.GetMultipleQuotes(stockArray);
+        if (null != quotes) {
+            for (Map.Entry<String, Stock> entry : quotes.entrySet()) {
+                quoteCVs.add(_yahooFinanceHelper.GetStockContentValues(entry.getValue()));
+            }
+        }
+
+        context.getContentResolver()
+                .bulkInsert(
+                        Contract.Quote.URI,
+                        quoteCVs.toArray(new ContentValues[quoteCVs.size()]));
+
+        Intent dataUpdatedIntent = new Intent(ACTION_DATA_UPDATED);
+        context.sendBroadcast(dataUpdatedIntent);
+    }
+
+    private static void schedulePeriodic(Context context) {
+        Timber.d(context.getString(R.string.log_scheduling_periodic_task));
 
         JobInfo.Builder builder = new JobInfo.Builder(PERIODIC_ID, new ComponentName(context, QuoteJobService.class));
-
 
         builder.setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
                 .setPeriodic(PERIOD)
                 .setBackoffCriteria(INITIAL_BACKOFF, JobInfo.BACKOFF_POLICY_EXPONENTIAL);
-
 
         JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
         scheduler.schedule(builder.build());
     }
 
-
     public static synchronized void initialize(final Context context) {
-
         schedulePeriodic(context);
         syncImmediately(context);
-
     }
 
     public static synchronized void syncImmediately(Context context) {
-
         ConnectivityManager cm =
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = cm.getActiveNetworkInfo();
@@ -174,10 +118,7 @@ public final class QuoteSyncJob {
             JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
 
             scheduler.schedule(builder.build());
-
-
         }
     }
-
 
 }

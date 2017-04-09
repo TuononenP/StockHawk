@@ -28,9 +28,13 @@
 
     <string name="error_no_network">No network connectivity! Will load stock cursor when the network is available.</string>
     <string name="error_no_stocks">No stocks added! Hit the floating action button to add one.</string>
+    <string name="symbol_not_found_in_yahoo">Retrieving stock information from Yahoo failed for symbol %s</string>
 
     <string name="toast_stock_added_no_connectivity">Symbol %s added. Will refresh when network available.</string>
     <string name="toast_no_connectivity">Will refresh when network available.</string>
-    <string name="toast_ticker_does_not_exist">Ticker does not exist</string>
+    <string name="toast_ticker_does_not_exist">Ticker %s does not exist</string>
 
+    <string name="log_running_sync_job">Running sync job</string>
+    <string name="log_scheduling_periodic_task">Scheduling a periodic task</string>
+    <string name="log_quote_not_added">Quote could not be added</string>
 </resources>
