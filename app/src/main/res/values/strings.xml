@@ -36,4 +36,6 @@
     <string name="log_quote_not_added">Quote could not be added</string>
     <string name="log_intent_handled">Intent handled</string>
     <string name="log_symbol_clicked">"Symbol clicked: %s"</string>
+    <string name="title_activity_detail">DetailActivity</string>
+    <string name="action_settings">Settings</string>
 </resources>
