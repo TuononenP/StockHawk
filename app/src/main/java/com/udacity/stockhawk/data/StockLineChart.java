@@ -24,11 +24,19 @@ public class StockLineChart {
     public StockLineChart(Context context, LineChart lineChart) {
         mContext = context;
         mLineChart = lineChart;
-        setData();
+        setData(getExampleYAxisValues(), "Label");
         setChartCustomizations();
     }
 
-    private ArrayList<Entry> setYAxisValues(){
+    public StockLineChart(Context context, LineChart lineChart,
+                          ArrayList<Entry> yVals, String label) {
+        mContext = context;
+        mLineChart = lineChart;
+        setData(yVals, label);
+        setChartCustomizations();
+    }
+
+    public ArrayList<Entry> getExampleYAxisValues(){
         ArrayList<Entry> yVals = new ArrayList<Entry>();
         yVals.add(new Entry(60, 0));
         yVals.add(new Entry(48, 1));
@@ -39,12 +47,10 @@ public class StockLineChart {
         return yVals;
     }
 
-    private void setData() {
-        ArrayList<Entry> yVals = setYAxisValues();
-
+    private void setData(ArrayList<Entry> yVals, String label) {
         LineDataSet set1;
 
-        set1 = new LineDataSet(yVals, "DataSet 1");
+        set1 = new LineDataSet(yVals, label);
         set1.setFillAlpha(110);
         // set1.setFillColor(Color.RED);
 
@@ -59,7 +65,6 @@ public class StockLineChart {
         LineData data = new LineData(set1);
 
         mLineChart.setData(data);
-
     }
 
     private void setChartCustomizations() {

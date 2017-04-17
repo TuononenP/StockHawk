@@ -5,11 +5,14 @@ import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 
+import com.github.mikephil.charting.data.Entry;
 import com.udacity.stockhawk.R;
 
 import java.io.IOException;
+import java.security.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -112,7 +115,43 @@ public class YahooFinanceHelper {
         return quoteCV;
     }
 
-    public static class CheckIfQuoteExists extends AsyncTask<String, Void, Boolean> {
+    public static ArrayList<com.github.mikephil.charting.data.Entry> parseHistory(String history) {
+        if (history == null || history == "") {
+            return null;
+        }
+
+        ArrayList<Entry> entries = new ArrayList<>();
+        String[] array = history.split("\n");
+        for (String item : array) {
+            String[] timeAndClose = item.split(", ");
+            if (timeAndClose.length >= 2) {
+                float timeInMillis = 0;
+                try {
+                    timeInMillis = Float.parseFloat(timeAndClose[0]);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                    Timber.d("Could not convert time in millis to float.");
+                }
+//                Calendar calendar = Calendar.getInstance();
+//                calendar.setTimeInMillis(timeInMillis);
+//                int year = calendar.get(Calendar.YEAR);
+//                int month = calendar.get(Calendar.MONTH);
+//                int day = calendar.get(Calendar.DAY_OF_MONTH);
+//                String dateString = String.format("%1$d/%2$d/%3$d", month, day, year);
+                float closePrice = 0;
+                try {
+                    closePrice = Float.parseFloat(timeAndClose[1]);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                    Timber.d("Could not convert close price to float.");
+                }
+                entries.add(new Entry(timeInMillis, closePrice));
+            }
+        }
+        return entries;
+    }
+
+    public static class CheckIfQuoteExistsAsyncTask extends AsyncTask<String, Void, Boolean> {
 
         @Override
         protected Boolean doInBackground(String... symbol) {
