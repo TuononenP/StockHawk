@@ -1,24 +1,13 @@
 package com.udacity.stockhawk.ui;
 
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.app.Activity;
-import android.support.v7.widget.RecyclerView;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.WindowManager;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
-
-import com.github.mikephil.charting.charts.LineChart;
-import com.github.mikephil.charting.components.Description;
 import com.udacity.stockhawk.R;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
-
-public class DetailActivity extends Activity {
+public class DetailActivity extends AppCompatActivity {
 
     private static final String CLICKED_SYMBOL = "clicked_symbol";
     private String mSymbol;
@@ -46,6 +35,7 @@ public class DetailActivity extends Activity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.menu_detail, menu);
 
         return true;
