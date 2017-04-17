@@ -38,11 +38,16 @@ public final class QuoteSyncJob {
     }
 
     static void addQuote(Context context, String symbol) {
-        Stock stock = _yahooFinanceHelper.GetSingleQuote(symbol);
+        Stock stock = _yahooFinanceHelper.getSingleQuote(symbol);
         if (stock != null) {
-            ContentValues values = _yahooFinanceHelper.GetStockContentValues(stock);
-            context.getContentResolver()
-                    .insert(Contract.Quote.URI, values);
+            ContentValues values = _yahooFinanceHelper.getStockContentValues(stock);
+            if (values != null) {
+                context.getContentResolver()
+                        .insert(Contract.Quote.URI, values);
+            }
+            else {
+                Timber.d(context.getString(R.string.log_quote_not_added));
+            }
         }
         else {
             Timber.d(context.getString(R.string.log_quote_not_added));
@@ -64,10 +69,13 @@ public final class QuoteSyncJob {
         }
 
         ArrayList<ContentValues> quoteCVs = new ArrayList<>();
-        Map<String, Stock> quotes = _yahooFinanceHelper.GetMultipleQuotes(stockArray);
+        Map<String, Stock> quotes = _yahooFinanceHelper.getMultipleQuotes(stockArray);
         if (null != quotes) {
             for (Map.Entry<String, Stock> entry : quotes.entrySet()) {
-                quoteCVs.add(_yahooFinanceHelper.GetStockContentValues(entry.getValue()));
+                ContentValues values = _yahooFinanceHelper.getStockContentValues(entry.getValue());
+                if (values != null) {
+                    quoteCVs.add(values);
+                }
             }
         }
 

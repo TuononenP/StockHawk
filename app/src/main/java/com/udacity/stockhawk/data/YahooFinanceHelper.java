@@ -35,7 +35,7 @@ public class YahooFinanceHelper {
     }
 
     @Nullable
-    public static Stock GetSingleQuote(String symbol) {
+    public static Stock getSingleQuote(String symbol) {
         Stock stock = null;
         try {
             stock = YahooFinance.get(symbol);
@@ -53,7 +53,7 @@ public class YahooFinanceHelper {
     }
 
     @Nullable
-    public static Map<String, Stock> GetMultipleQuotes(String[] symbols) {
+    public static Map<String, Stock> getMultipleQuotes(String[] symbols) {
         if (symbols.length == 0) {
             return null;
         }
@@ -68,7 +68,10 @@ public class YahooFinanceHelper {
         return null;
     }
 
-    public static ContentValues GetStockContentValues(Stock stock) {
+    public static ContentValues getStockContentValues(Stock stock) {
+        if (stock.isValid() == false) {
+            return null;
+        }
         Calendar from = Calendar.getInstance();
         Calendar to = Calendar.getInstance();
         from.add(Calendar.YEAR, -YEARS_OF_HISTORY);
