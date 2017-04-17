@@ -21,6 +21,7 @@ import butterknife.ButterKnife;
 public class DetailActivity extends Activity {
 
     private static final String CLICKED_SYMBOL = "clicked_symbol";
+    private String mSymbol;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,7 +37,9 @@ public class DetailActivity extends Activity {
         if (intent.hasExtra(CLICKED_SYMBOL)) {
             String symbol = intent.getStringExtra(CLICKED_SYMBOL);
             if (symbol.isEmpty() == false) {
-                Toast.makeText(getApplicationContext(), symbol + " clicked", Toast.LENGTH_LONG).show();
+                mSymbol = symbol;
+//                Toast.makeText(getApplicationContext(), symbol + " clicked", Toast.LENGTH_LONG).show();
+
             }
         }
     }

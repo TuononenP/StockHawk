@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -25,9 +26,13 @@ import com.udacity.stockhawk.data.Contract;
 import com.udacity.stockhawk.data.PrefUtils;
 import com.udacity.stockhawk.sync.QuoteSyncJob;
 
+import java.io.IOException;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import timber.log.Timber;
+import yahoofinance.Stock;
+import yahoofinance.YahooFinance;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor>,
         SwipeRefreshLayout.OnRefreshListener,
@@ -96,7 +101,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onRefresh() {
-
         QuoteSyncJob.syncImmediately(this);
 
         if (!networkUp() && adapter.getItemCount() == 0) {
@@ -129,8 +133,47 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             }
 
-            PrefUtils.addStock(this, symbol);
-            QuoteSyncJob.syncImmediately(this);
+            new AddStockIfQuoteExists(getApplicationContext()).execute(symbol);
+        }
+    }
+
+    public static class AddStockIfQuoteExists extends AsyncTask<String, Void, Boolean> {
+
+        private String mSymbol;
+        private Context mContext;
+
+        public AddStockIfQuoteExists(Context context) {
+            mContext = context;
+        }
+
+        @Override
+        protected Boolean doInBackground(String... symbol) {
+            try {
+                if (symbol.length > 0) {
+                    mSymbol = symbol[0];
+                    Stock quote = (Stock) YahooFinance.get(mSymbol);
+                    if (quote.isValid()) {
+                        return true;
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+                String errorMessage = mContext.getString(R.string.symbol_not_found_in_yahoo, (Object) symbol);
+                Timber.e(errorMessage);
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean exists) {
+            if (exists) {
+                PrefUtils.addStock(mContext, mSymbol);
+                QuoteSyncJob.syncImmediately(mContext);
+                Toast.makeText(mContext, mSymbol + " added", Toast.LENGTH_LONG).show();
+            }
+            else {
+                Toast.makeText(mContext, mSymbol + " was not found", Toast.LENGTH_LONG).show();
+            }
         }
     }
 
@@ -152,13 +195,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         adapter.setCursor(data);
     }
 
-
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         swipeRefreshLayout.setRefreshing(false);
         adapter.setCursor(null);
     }
-
 
     private void setDisplayModeMenuItemIcon(MenuItem item) {
         if (PrefUtils.getDisplayMode(this)
