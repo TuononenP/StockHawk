@@ -1,6 +1,5 @@
 package com.udacity.stockhawk.ui;
 
-
 import android.content.Context;
 import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
@@ -48,14 +47,12 @@ class StockAdapter extends RecyclerView.Adapter<StockAdapter.StockViewHolder> {
     }
 
     String getSymbolAtPosition(int position) {
-
         cursor.moveToPosition(position);
         return cursor.getString(Contract.Quote.POSITION_SYMBOL);
     }
 
     @Override
     public StockViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-
         View item = LayoutInflater.from(context).inflate(R.layout.list_item_quote, parent, false);
 
         return new StockViewHolder(item);
@@ -63,13 +60,10 @@ class StockAdapter extends RecyclerView.Adapter<StockAdapter.StockViewHolder> {
 
     @Override
     public void onBindViewHolder(StockViewHolder holder, int position) {
-
         cursor.moveToPosition(position);
-
 
         holder.symbol.setText(cursor.getString(Contract.Quote.POSITION_SYMBOL));
         holder.price.setText(dollarFormat.format(cursor.getFloat(Contract.Quote.POSITION_PRICE)));
-
 
         float rawAbsoluteChange = cursor.getFloat(Contract.Quote.POSITION_ABSOLUTE_CHANGE);
         float percentageChange = cursor.getFloat(Contract.Quote.POSITION_PERCENTAGE_CHANGE);
@@ -89,8 +83,6 @@ class StockAdapter extends RecyclerView.Adapter<StockAdapter.StockViewHolder> {
         } else {
             holder.change.setText(percentage);
         }
-
-
     }
 
     @Override
@@ -102,13 +94,11 @@ class StockAdapter extends RecyclerView.Adapter<StockAdapter.StockViewHolder> {
         return count;
     }
 
-
     interface StockAdapterOnClickHandler {
         void onClick(String symbol);
     }
 
     class StockViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-
         @BindView(R.id.symbol)
         TextView symbol;
 
@@ -127,11 +117,9 @@ class StockAdapter extends RecyclerView.Adapter<StockAdapter.StockViewHolder> {
         @Override
         public void onClick(View v) {
             int adapterPosition = getAdapterPosition();
-            cursor.moveToPosition(adapterPosition);
-            int symbolColumn = cursor.getColumnIndex(Contract.Quote.COLUMN_SYMBOL);
-            clickHandler.onClick(cursor.getString(symbolColumn));
+            String symbol = getSymbolAtPosition(adapterPosition);
+            clickHandler.onClick(symbol);
         }
-
 
     }
 }
